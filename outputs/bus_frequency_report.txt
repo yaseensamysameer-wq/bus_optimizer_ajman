@@ -1,0 +1,40 @@
+==========================================================================================================================
+                                                   BUS FREQUENCY REPORT                                                   
+                                                (bus_optimizer_ajman V0.4)                                                
+==========================================================================================================================
+area:      AL RASHIDIYA
+    Route:      E411
+    Time:      19:30
+    Day:      SATURDAY
+
+predicted passenger demand: 153
+predicted traffic delay (in mins): 26
+Bus capacity:      50
+
+--------------------------------------------------------------------------------------------------------------------------
+RECOMMENDATION
+--------------------------------------------------------------------------------------------------------------------------
+
+HIGH DEMAND:      TRUE
+Reason:
+Based off historical data, AI predicts that transportation in AL RASHIDIYA going on route E411 at 19:30 is usually busy
+
+Recommended frequency:      every 20 minutes
+Reason:
+Commuter dissatisfaction rises when service frequency cannot accommodate high passenger volume
+
+Recommended bus loads:      4
+Reason:
+With a predicted demand of 153, and a capacity of 50, 4 bus loads is more than sufficient, providing an additional 47 seats in case of AI underestimation or outliers
+
+--------------------------------------------------------------------------------------------------------------------------
+EXPECTED RESULTS
+--------------------------------------------------------------------------------------------------------------------------
+
+More buses during peak hours:
+-less overcrowding
+-shorter passenger waiting time
+-improved schedule reliabality and on-time preformance
+-higher overall commuter satisfaction
+==========================================================================================================================
+
