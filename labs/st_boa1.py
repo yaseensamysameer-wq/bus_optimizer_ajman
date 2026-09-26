@@ -185,8 +185,7 @@ selected_time = st.selectbox(
     "Select Time",
     sorted(df["time"].unique())
 )
-print(selected_time)
-print(type(selected_time))
+
 df1 = df
 df1['time_mins'] = df1['time'].apply(bo3.turn_time_values)
 # ---------------------------------------------------------
@@ -214,79 +213,123 @@ if 'area_ajman industrial area' in tempdf1.columns:
 if 'bus_route_route AJ1' in tempdf1.columns:
     tempdf1 = tempdf1.drop(columns=['bus_route_route AJ1'])
 
-predicted_demand = bo3.pred('passenger_demand', tempdf1)[0]
-
-st.metric(
-    "Predicted Passenger Demand",
-    f"{predicted_demand:.0f} passengers"
-)
-
-# =========================================================
-# V0.4 BUS RECOMMENDATION
-# =========================================================
-
-st.subheader("🚌 Recommended Bus Frequency")
 
 
-# Temporary example rules.
-# You will improve these later.
+st.subheader("🤖 AI Demand Prediction")
+report = st.checkbox('Generate Report')
+run = st.button('Run AI Demand Prediction')
+if run:
 
-if predicted_demand < 30:
+    with st.status("🤖 AI is analyzing passenger demand...", expanded=True) as status:
 
-    demand_level = "LOW"
-    recommended_frequency = 30
-
-elif predicted_demand < 60:
-
-    demand_level = "MEDIUM"
-    recommended_frequency = 20
-
-elif predicted_demand < 100:
-
-    demand_level = "HIGH"
-    recommended_frequency = 10
-
-else:
-
-    demand_level = "VERY HIGH"
-    recommended_frequency = 5
+        st.write("🔍 Checking selected route...")
+        
 
 
-st.write(f"**Demand level:** {demand_level}")
+        st.write("📊 Analyzing historical demand...")
 
-st.metric(
-    "Recommended Frequency",
-    f"Every {recommended_frequency} minutes"
-)
+        # Your actual ML prediction
+        predicted_demand = bo3.pred('passenger_demand', tempdf1)[0]
+
+        st.write("🧠 Running demand prediction model...")
+
+        # If you have additional processing here,
+        # put it here.
 
 
-if demand_level == "LOW":
+        status.update(
+            label="✅ AI analysis complete",
+            state="complete",
+            expanded=False
+        )
 
-    st.info(
-        "Low predicted demand. A lower bus frequency may "
-        "reduce unnecessary bus trips."
+
+    st.metric(
+        "Predicted Passenger Demand",
+        f"{predicted_demand:.0f} passengers"
     )
+    # =========================================================
+    # V0.4 BUS RECOMMENDATION
+    # =========================================================
 
-elif demand_level == "MEDIUM":
+    st.subheader("🚌 Recommended Bus Frequency")
 
-    st.info(
-        "Moderate predicted demand. Maintain normal service "
-        "or make a small frequency adjustment."
+
+    # Temporary example rules.
+    # You will improve these later.
+
+    # if predicted_demand < 30:
+
+    #     demand_level = "LOW"
+    #     recommended_frequency = 30
+
+    # elif predicted_demand < 60:
+
+    #     demand_level = "MEDIUM"
+    #     recommended_frequency = 20
+
+    # elif predicted_demand < 100:
+
+    #     demand_level = "HIGH"
+    #     recommended_frequency = 10
+
+    # else:
+
+    #     demand_level = "VERY HIGH"
+    #     recommended_frequency = 5
+
+
+    # st.write(f"**Demand level:** {demand_level}")
+
+    # st.metric(
+    #     "Recommended Frequency",
+    #     f"Every {recommended_frequency} minutes"
+    # )
+
+if report and run:
+    with st.status("Generating bus report", expanded=True, state='running') as status1:
+        st.write('AI is predicting traffic delay')
+        st.write('checking criterions...')
+        st.write('recommending frequency...')
+        st.write('generating report...')
+    status1.update(
+        state='running'
     )
+    bo3.report(selected_time, selected_area, selected_route, selected_day, tempdf1)
+    status1.update(
+            label="✅ Bus report generated",
+            state="complete",
+            expanded=False
+        )
 
-elif demand_level == "HIGH":
+    
+    # if demand_level == "LOW":
 
-    st.warning(
-        "High predicted demand. Consider increasing bus frequency "
-        "to reduce passenger waiting and overcrowding."
-    )
+    #     st.info(
+    #         "Low predicted demand. A lower bus frequency may "
+    #         "reduce unnecessary bus trips."
+    #     )
 
-else:
+    # elif demand_level == "MEDIUM":
 
-    st.error(
-        "Very high predicted demand. Consider substantially "
-        "increasing bus frequency during this period."
-    )
+    #     st.info(
+    #         "Moderate predicted demand. Maintain normal service "
+    #         "or make a small frequency adjustment."
+    #     )
+
+    # elif demand_level == "HIGH":
+
+    #     st.warning(
+    #         "High predicted demand. Consider increasing bus frequency "
+    #         "to reduce passenger waiting and overcrowding."
+    #     )
+
+    # else:
+
+    #     st.error(
+    #         "Very high predicted demand. Consider substantially "
+    #         "increasing bus frequency during this period."
+    #     )
 
 
 # =========================================================

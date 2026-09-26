@@ -1,40 +1,39 @@
-=====================================================================================================================================================================
-                                                                         BUS FREQUENCY REPORT                                                                        
-                                                                      (bus_optimizer_ajman V0.4)                                                                     
-=====================================================================================================================================================================
-area:      AL RASHIDIYA
-    Route:      E411
-    Time:      19:30
-    Day:      SATURDAY
+================================================================================
+                         BUS FREQUENCY REPORT ahhaahha                          
+                           (bus_optimizer_ajman V0.4)                           
+================================================================================
+area:      ajman industrial area
+Route:     route AJ1
+Time:      06:30
+Day:       Wednesday
 
-predicted passenger demand: 153
-predicted traffic delay (in mins): 26
+predicted passenger demand: 74
+predicted traffic delay (in mins): 11
 Bus capacity:      50
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 RECOMMENDATION
----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-HIGH DEMAND:      TRUE
+HIGH DEMAND:      FALSE
 Reason:
-Based off historical data, AI predicts that transportation in AL RASHIDIYA going on route E411 at 19:30 is usually busy
+Based off historical data, AI predicts that transportation in ajman industrial area going on route route AJ1 at 06:30 is usually quite
 
-Recommended frequency:      every 20 minutes
+Recommended frequency:      every Unknown Route minutes
 Reason:
-Commuter dissatisfaction rises when service frequency cannot accommodate high passenger volume
+too much buses with low demand leads to fuel waste and inefficiency
 
-Recommended bus loads:      4
+Recommended bus loads:      2
 Reason:
-With a predicted demand of 153, and a capacity of 50, 4 bus loads is more than sufficient, providing an additional 47 seats in case of AI underestimation or outliers
+With a predicted demand of 74, and a capacity of 50, 2 bus loads is more than sufficient, providing an additional 26 seats in case of AI underestimation or outliers
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 EXPECTED RESULTS
----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-More buses during peak hours:
--less overcrowding
--shorter passenger waiting time
--improved schedule reliabality and on-time preformance
--higher overall commuter satisfaction
-=====================================================================================================================================================================
-
+Fewer buses during off-peak hours:
+-reduced fuel consumption
+-reduced vehicle emissions
+-extended vehicle maintenance lifespans
+-optimized resource allocations for peak demands
+================================================================================

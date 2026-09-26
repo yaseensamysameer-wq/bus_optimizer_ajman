@@ -4,6 +4,7 @@ import os
 import contextlib
 import sys
 from pathlib import Path
+import streamlit as st
 
 # Get the 'nbconvert' folder path
 NBCONVERT_DIR = Path(__file__).resolve().parent
@@ -87,7 +88,7 @@ def pred(target, input, model=xgbmodel, x=X1, df=df):
     X1_train, X1_test, y1_train, y1_test = train_test_split(x, df[f'{target}'], test_size=0.2, random_state=42,)
     model.fit(X1_train, y1_train)
     return model.predict(input)
-# ---- ADDED: "tee" so prints go to console AND file ----
+# ---- ADDED: "tee" so st.writes go to console AND file ----
 class _Tee:
     def __init__(self, *streams):
         self.streams = streams
@@ -107,64 +108,136 @@ output_dir = os.path.abspath(os.path.join(script_dir, '..', 'outputs'))
 os.makedirs(output_dir, exist_ok=True)
 report_path = os.path.join(output_dir, 'bus_frequency_report.txt')
 # ---- END ADDED ----
-def report():
-# ---- everything below is your ORIGINAL code, just indented one level inside the 'with' ----
-    with open(report_path, 'w', encoding='utf-8') as report_file, \
-        contextlib.redirect_stdout(_Tee(sys.stdout, report_file)):
+def report(time, area, route, day, input, width=80):
+    capacity = 50
+    predicted_demand = pred('passenger_demand', input)[0]
+    predicted_delay = pred('traffic_delay_mins', input)[0]
+    
+    high_demand = (predicted_demand > 90) or (predicted_delay > 15)
+    recommended_bus_loads = (predicted_demand // capacity) + 1
+    
+    freq = recommended_bus_freq(route, predicted_demand, capacity, predicted_delay)
+    extra_seats = (capacity * recommended_bus_loads) - predicted_demand
+    seat_word = 'seat' if extra_seats == 1 else 'seats'
+    load_word = 'loads' if recommended_bus_loads > 1 else 'load'
 
-        print(f'{'=' * width}')
-        print('BUS FREQUENCY REPORT'.center(width))
-        print('(bus_optimizer_ajman V0.4)'.center(width))
-        print(f'{'=' * width}')
-        print(f'''area:{' ' * 5} {areaa}
-        Route:{' ' * 5} {routee}
-        Time:{' ' * 5} {timee}
-        Day:{' ' * 5} {dayy}''')
+    # # ---------- Plain-text version, for the saved report file ----------
+    # lines = build_report_lines(  # same content as before, unchanged logic
+    #     time, area, route, day, capacity, predicted_demand, predicted_delay,
+    #     high_demand, recommended_bus_loads, freq, extra_seats, seat_word,
+    #     load_word, width,
+    # )
+    # with open(report_path, 'w', encoding='utf-8') as report_file, \
+    #     contextlib.redirect_stdout(_Tee(sys.stdout, report_file)):
+    #     print('\n'.join(lines))
+    
+    # ---------- Polished on-screen dashboard ----------
+    st.markdown(f"### 🚌 Bus Frequency Report")
+    st.caption("bus_optimizer_ajman · V0.4")
 
-        tempdf1 = pd.DataFrame(0, index=[0], columns=X1.columns)
-        tempdf1[f'area_{areaa.strip().lower()}'] = 1
-        tempdf1[f'bus_route_route {routee.lower().strip().replace('route', '').replace('_', '').replace(' ', '').replace('bus','').upper()}'] = 1
-        tempdf1[f'time_mins'] = turn_time_values(timee)
-        tempdf1[f'day_{dayy.strip().capitalize()}'] = 1
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Area", area)
+    c2.metric("Route", route)
+    c3.metric("Time", time)
+    c4.metric("Day", day)
 
-        capacity = 50
-        predicted_demand = pred('passenger_demand', tempdf1)[0]
-        predicted_delay = pred('traffic_delay_mins', tempdf1)[0]
-        recommended_bus_loads = ((predicted_demand // capacity) + 1)
+    st.divider()
 
-        print(f'\npredicted passenger demand: {predicted_demand:.0f}')
-        print(f'predicted traffic delay (in mins): {predicted_delay:.0f}')
-        print(f'Bus capacity:{' ' * 5} {capacity}\n')
-        print(f'{'-' * width}')
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Predicted Demand", f"{predicted_demand:.0f} pax")
+    m2.metric("Predicted Delay", f"{predicted_delay:.0f} min")
+    m3.metric("Bus Capacity", f"{capacity}")
 
-        print('RECOMMENDATION')
-        print(f'{'-' * width}\n')
-        print(f'HIGH DEMAND:{' ' * 5} {'TRUE' if (predicted_demand > 90) or (predicted_delay>15) else 'FALSE'}')
-        print('Reason:')
-        print(f"Based off historical data, AI predicts that transportation in {areaa} going on route {routee} at {timee} is usually {'busy' if (predicted_demand > 90) or (predicted_delay>15) else 'quite'}\n")
-        print(f'Recommended frequency:{' ' * 5} every {recommended_bus_freq('E411', predicted_demand, 50, predicted_delay)} minutes')
-        print('Reason:')
-        print(f'{'Commuter dissatisfaction rises when service frequency cannot accommodate high passenger volume' if (predicted_demand > 90) or (predicted_delay>15) else 'too much buses with low demand leads to fuel waste and inefficiency'}\n')
-        print(f'Recommended bus loads:{' ' * 5} {recommended_bus_loads:.0f}')
-        print('Reason:')
-        print(f'With a predicted demand of {predicted_demand:.0f}, and a capacity of {capacity:.0f}, {recommended_bus_loads:.0f} bus {'loads' if recommended_bus_loads > 1 else 'load'} is more than sufficient, providing an additional {((capacity * recommended_bus_loads) - predicted_demand):.0f} {'seat' if ((capacity * recommended_bus_loads) - predicted_demand) == 1 else 'seats'} in case of AI underestimation or outliers\n')
-        print(f'{'-' * width}')
+    if high_demand:
+        st.error(f"⚠️ **HIGH DEMAND** — {area} on route {route} at {time} is usually busy")
+    else:
+        st.success(f"✅ **NORMAL DEMAND** — {area} on route {route} at {time} is usually quiet")
 
-        print('EXPECTED RESULTS')
-        print(f'{'-' * width}\n')
+    st.divider()
+    st.markdown("#### Recommendation")
+
+    r1, r2 = st.columns(2)
+    with r1:
+        st.metric("Recommended Frequency", f"Every {freq} min")
+        with st.expander("Why?"):
+            st.write(
+                "Commuter dissatisfaction rises when service frequency cannot "
+                "accommodate high passenger volume." if high_demand else
+                "Too many buses with low demand leads to fuel waste and inefficiency."
+            )
+    with r2:
+        st.metric("Recommended Bus Loads", f"{recommended_bus_loads:.0f}")
+        with st.expander("Why?"):
+            st.write(
+                f"With a predicted demand of {predicted_demand:.0f} and a capacity of "
+                f"{capacity:.0f}, {recommended_bus_loads:.0f} bus {load_word} is more "
+                f"than sufficient — providing an additional {extra_seats:.0f} "
+                f"{seat_word} in case of AI underestimation or outliers."
+            )
+
+    st.divider()
+    st.markdown("#### Expected Results")
+
+    if high_demand:
+        st.markdown("**More buses during peak hours:**")
+        for item in [
+            "Less overcrowding",
+            "Shorter passenger waiting time",
+            "Improved schedule reliability and on-time performance",
+            "Higher overall commuter satisfaction",
+        ]:
+            st.markdown(f"- {item}")
+    else:
+        st.markdown("**Fewer buses during off-peak hours:**")
+        for item in [
+            "Reduced fuel consumption",
+            "Reduced vehicle emissions",
+            "Extended vehicle maintenance lifespans",
+            "Optimized resource allocations for peak demands",
+        ]:
+            st.markdown(f"- {item}")
+
+    with st.expander("📄 View raw text report"):
+        st.write(f'{'=' * width}')
+        st.write('BUS FREQUENCY REPORT'.center(width))
+        st.write('(bus_optimizer_ajman V0.4)'.center(width))
+        st.write(f'{'=' * width}')
+        st.write(f'''area:{' ' * 5} {area}
+        Route:{' ' * 5} {route}
+        Time:{' ' * 5} {time}
+        Day:{' ' * 5} {day}''')
+
+        st.write(f'\npredicted passenger demand: {predicted_demand:.0f}')
+        st.write(f'predicted traffic delay (in mins): {predicted_delay:.0f}')
+        st.write(f'Bus capacity:{' ' * 5} {capacity}\n')
+        st.write(f'{'-' * width}')
+
+        st.write('RECOMMENDATION')
+        st.write(f'{'-' * width}\n')
+        st.write(f'HIGH DEMAND:{' ' * 5} {'TRUE' if (predicted_demand > 90) or (predicted_delay>15) else 'FALSE'}')
+        st.write('Reason:')
+        st.write(f"Based off historical data, AI predicts that transportation in {area} going on route {route} at {time} is usually {'busy' if (predicted_demand > 90) or (predicted_delay>15) else 'quite'}\n")
+        st.write(f'Recommended frequency:{' ' * 5} every {recommended_bus_freq('E411', predicted_demand, 50, predicted_delay)} minutes')
+        st.write('Reason:')
+        st.write(f'{'Commuter dissatisfaction rises when service frequency cannot accommodate high passenger volume' if (predicted_demand > 90) or (predicted_delay>15) else 'too much buses with low demand leads to fuel waste and inefficiency'}\n')
+        st.write(f'Recommended bus loads:{' ' * 5} {recommended_bus_loads:.0f}')
+        st.write('Reason:')
+        st.write(f'With a predicted demand of {predicted_demand:.0f}, and a capacity of {capacity:.0f}, {recommended_bus_loads:.0f} bus {'loads' if recommended_bus_loads > 1 else 'load'} is more than sufficient, providing an additional {((capacity * recommended_bus_loads) - predicted_demand):.0f} {'seat' if ((capacity * recommended_bus_loads) - predicted_demand) == 1 else 'seats'} in case of AI underestimation or outliers\n')
+        st.write(f'{'-' * width}')
+
+        st.write('EXPECTED RESULTS')
+        st.write(f'{'-' * width}\n')
         if (predicted_demand > 90) or (predicted_delay>15):
-            print('More buses during peak hours:')
-            print('-less overcrowding')
-            print('-shorter passenger waiting time')
-            print('-improved schedule reliabality and on-time preformance')
-            print('-higher overall commuter satisfaction')
+            st.write('More buses during peak hours:')
+            st.write('-less overcrowding')
+            st.write('-shorter passenger waiting time')
+            st.write('-improved schedule reliabality and on-time preformance')
+            st.write('-higher overall commuter satisfaction')
 
         elif (predicted_demand <= 90) and (predicted_delay<=15):
-            print('Fewer buses during off-peak hours:')
-            print('-reduced fuel consumption')
-            print('-reduced vehicle emissions')
-            print('-extended vehicle maintenance lifespans')
-            print('-optimized resource allocations for peak demands')
-        print(f'{'=' * width}\n')
-
-    print(f'\nReport saved to: {report_path}')
+            st.write('Fewer buses during off-peak hours:')
+            st.write('-reduced fuel consumption')
+            st.write('-reduced vehicle emissions')
+            st.write('-extended vehicle maintenance lifespans')
+            st.write('-optimized resource allocations for peak demands')
+        st.write(f'{'=' * width}\n')
