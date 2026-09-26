@@ -3,8 +3,17 @@ import numpy as np
 import os
 import contextlib
 import sys
+from pathlib import Path
 
-df = pd.read_csv("./data/passengers.csv")
+# Get the 'nbconvert' folder path
+NBCONVERT_DIR = Path(__file__).resolve().parent
+
+# Go up one folder to project root, then down into data/passengers.csv
+csv_path = NBCONVERT_DIR.parent / "data" / "passengers.csv"
+
+# Load data safely
+df = pd.read_csv(str(csv_path))
+
 
 def turn_time_values(time_string):
     hours, minutes = map(int, time_string.split(':'))

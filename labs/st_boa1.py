@@ -2,7 +2,17 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from pathlib import Path
+import os
+import sys
 
+
+st.write("Current folder:", os.getcwd())
+st.write("This file:", __file__)
+st.write("Files in folder:", os.listdir(os.path.dirname(__file__)))
+st.write("Python path:", sys.path)
+
+
+import bus_optmizer_ajmanv0_3_4 as bo3
 # =========================================================
 # PAGE CONFIGURATION
 # =========================================================
@@ -175,8 +185,10 @@ selected_time = st.selectbox(
     "Select Time",
     sorted(df["time"].unique())
 )
-
-
+print(selected_time)
+print(type(selected_time))
+df1 = df
+df1['time_mins'] = df1['time'].apply(bo3.turn_time_values)
 # ---------------------------------------------------------
 # TEMPORARY PREDICTION
 # ---------------------------------------------------------
@@ -188,20 +200,26 @@ time_data = filtered_df[
     filtered_df["time"] == selected_time
 ]
 
-if len(time_data) > 0:
+selected_day = st.sidebar.selectbox(
+    "Select Day",
+    df["day"].unique()
+)
+tempdf1 = pd.DataFrame(0, index=[0], columns=bo3.X1.columns)
+tempdf1[f'area_{selected_area.strip().lower()}'] = 1
+tempdf1[f'bus_route_route {selected_route.lower().strip().replace('route', '').replace('_', '').replace(' ', '').replace('bus','').upper()}'] = 1
+tempdf1[f'time_mins'] = bo3.turn_time_values(selected_time)
+tempdf1[f'day_{selected_day.strip().capitalize()}'] = 1 
+if 'area_ajman industrial area' in tempdf1.columns:
+    tempdf1 = tempdf1.drop(columns=['area_ajman industrial area'])
+if 'bus_route_route AJ1' in tempdf1.columns:
+    tempdf1 = tempdf1.drop(columns=['bus_route_route AJ1'])
 
-    predicted_demand = time_data["passenger_demand"].mean()
-
-else:
-
-    predicted_demand = filtered_df["passenger_demand"].mean()
-
+predicted_demand = bo3.pred('passenger_demand', tempdf1)[0]
 
 st.metric(
     "Predicted Passenger Demand",
     f"{predicted_demand:.0f} passengers"
 )
-
 
 # =========================================================
 # V0.4 BUS RECOMMENDATION
