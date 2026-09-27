@@ -34,7 +34,7 @@ def recommended_bus_freq(route, demand, capacity, delay, is_peak=False):
         # Options: 20 to 25 mins
         return 20 if high_pressure else 25
         
-    elif route == "AJ3":
+    elif route == "AJ1":
         # Options: 20 to 30 mins
         return 20 if high_pressure else 30
         
