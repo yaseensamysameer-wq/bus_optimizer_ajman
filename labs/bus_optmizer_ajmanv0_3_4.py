@@ -7,10 +7,10 @@ from pathlib import Path
 import streamlit as st
 
 # Get the 'nbconvert' folder path
-NBCONVERT_DIR = Path(__file__).resolve().parent
+PARENT_DIR = Path(__file__).resolve().parent
 
 # Go up one folder to project root, then down into data/passengers.csv
-csv_path = NBCONVERT_DIR.parent / "data" / "passengers.csv"
+csv_path = PARENT_DIR.parent / "data" / "passengers.csv"
 
 # Load data safely
 df = pd.read_csv(str(csv_path))
@@ -68,14 +68,16 @@ y2 = df['capacity_limit']
 y3 = df['traffic_delay_mins']
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error
-
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.ensemble import RandomForestRegressor
 X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.2, random_state=42,)
 from xgboost import XGBRegressor
 
 xgbmodel = XGBRegressor(n_estimators=300, max_depth=8, learning_rate=0.05, random_state=42, n_jobs=-1)
+xgbmodelR = xgbmodel
 xgbmodel.fit(X1_train, y1_train)
-
+forestmodel = RandomForestRegressor(n_estimators=300, max_depth=20, random_state=42, n_jobs=-1)
+forestmodelR = forestmodel
 import shutil
 width = shutil.get_terminal_size().columns
 

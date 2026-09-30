@@ -4,7 +4,7 @@ import plotly.express as px
 from pathlib import Path
 import os
 import sys
-
+import numpy as np
 
 
 
@@ -384,5 +384,49 @@ elif page == 'Developer Mode':
 
             with st.expander('view current session state dictionary'):
                 st.write(st.session_state)
+        with dtab2:
+            model_choise = st.radio("Pick AI model to test", ["XGBoost Regressor", "RandomForest Regressor"])
+            if model_choise == "XGBoost Regressor":
+                model = bo3.xgbmodelR
+            if model_choise == "RandomForest Regressor":
+                model = bo3.forestmodelR
+            target_choise = st.selectbox('Pick target', ['Passenger Demand', 'Traffic Delay Minutes', 'Capacity Limit'])
+            if target_choise == 'Passenger Demand':
+                target = bo3.y1
+            if target_choise == 'Capacity Limit':
+                target = bo3.y2
+            if target_choise == 'Traffic Delay Minutes':
+                target = bo3.y3
+            if st.button('Test model'):
+                with st.status("🤖 Testing AI model...", expanded=True) as status2:
+                    st.write('Importing Models...')
+                    from sklearn.model_selection import train_test_split
+                    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+                    if model_choise == "XGBoost Regressor":
+                        from xgboost import XGBRegressor
+                    if model_choise == "RandomForest Regressor":
+                        from sklearn.ensemble import RandomForestRegressor
+                    st.write('Training the AI...')
+                    X_train, X_test, y_train, y_test = train_test_split(bo3.X1, target, test_size=0.2, random_state=42,)
+                    model.fit(X_train, y_train)
+                    st.write('Testing the model...')
+                    y_pred = model.predict(X_test)
+                    st.write('Grading the test...')
+                    mae = mean_absolute_error(y_test, y_pred)
+                    mse = mean_squared_error(y_test, y_pred)
+                    rmse = np.sqrt(mse)
+                    r2 = r2_score(y_test, y_pred)
 
-            
+                    status2.update(
+                        label="✅ AI testing complete",
+                        state="complete",
+                        expanded=False
+                    )
+                with st.container(border=True):
+                    st.header(f'{model_choise} Test Results')
+                    st.write(f'Target: {target_choise}')
+                    st.write(f'''
+Mean Absolute Error: {mae:.3f}\n
+Mean Squared Error: {mse:.3f}\n
+Root Mean Squared Error: {rmse:.3f}\n
+R2 Score: {r2:.3f}''')
